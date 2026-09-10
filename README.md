@@ -218,12 +218,19 @@ canvas without overriding a single rule.
 
 ```css
 .tc-grid {
-    --tc-surface: #fff;
-    --tc-surface-header: #f6f7f9;
-    --tc-border: #dfe3e8;
-    --tc-text: #1c2128;
-    --tc-accent: #3b6cf0;
     --tc-radius: 8px;
+    --tc-surface: #ffffff;          /* widget body            */
+    --tc-surface-header: #f6f7f9;   /* widget title bar       */
+    --tc-canvas: transparent;       /* behind the widgets     */
+    --tc-border: #dfe3e8;
+    --tc-border-strong: #b9c0c9;    /* resize grips           */
+    --tc-text: #1c2128;
+    --tc-text-muted: #656d76;
+    --tc-accent: #3b6cf0;           /* selection and handles  */
+    --tc-accent-soft: rgba(59, 108, 240, 0.12);
+    --tc-guide: rgba(120, 130, 145, 0.10);   /* grid lines    */
+    --tc-shadow: 0 1px 2px rgba(16, 22, 30, 0.06), 0 1px 3px rgba(16, 22, 30, 0.04);
+    --tc-shadow-lift: 0 8px 24px rgba(16, 22, 30, 0.16), 0 2px 6px rgba(16, 22, 30, 0.10);
 }
 ```
 
