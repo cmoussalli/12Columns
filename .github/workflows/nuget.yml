@@ -1,0 +1,22 @@
+name: Publish to NuGet
+on:
+  push:
+    tags:
+    - nuget*
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: 'Restore packages'
+        run: dotnet restore src/TwelveColumns/TwelveColumns.csproj
+      - name: 'Build project'
+        run: dotnet build src/TwelveColumns/TwelveColumns.csproj --no-restore --configuration Release
+      - name: 'Pack project'
+        run: dotnet pack src/TwelveColumns/TwelveColumns.csproj --no-restore --no-build --configuration Release --output output
+      - name: "Push package"
+        run: dotnet nuget push output\*.nupkg -k ${{ secrets.NUGETKEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
