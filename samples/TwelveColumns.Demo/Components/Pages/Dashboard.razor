@@ -1,0 +1,242 @@
+@page "/dashboard"
+@inject LayoutStore Store
+
+<PageTitle>Dashboard — TwelveColumns</PageTitle>
+
+<h1>Dashboard</h1>
+<p class="lede">
+    A Grafana-style canvas. Drag a panel by its header, grab an edge or the bottom-right
+    corner to resize, and drop a new panel straight from the palette. Panels shuffle out of
+    the way and settle upwards, exactly like a real dashboard.
+</p>
+
+<div class="toolbar">
+    <label class="switch">
+        <input type="checkbox" checked="@_editMode" @onchange="ToggleEditMode" />
+        Edit mode
+    </label>
+
+    <div class="toolbar-sep"></div>
+
+    <span class="field">
+        Columns
+        <input type="range" min="4" max="24" value="@_columns" @oninput="SetColumns" />
+        <span class="field-value">@_columns</span>
+    </span>
+
+    <span class="field">
+        Row height
+        <input type="range" min="30" max="120" step="5" value="@_rowHeight" @oninput="SetRowHeight" />
+        <span class="field-value">@_rowHeight</span>
+    </span>
+
+    <span class="field">
+        Gap
+        <input type="range" min="0" max="24" value="@_gap" @oninput="SetGap" />
+        <span class="field-value">@_gap</span>
+    </span>
+
+    <div class="toolbar-spacer"></div>
+
+    <button class="btn" @onclick="CompactAsync" disabled="@(!_editMode)">Compact</button>
+    <button class="btn" @onclick="Save">Save</button>
+    <button class="btn" @onclick="LoadAsync" disabled="@(!Store.Has(StoreKey))">Load</button>
+    <button class="btn" @onclick="ResetAsync">Reset</button>
+    <button class="btn btn--danger" @onclick="ClearAsync">Clear</button>
+</div>
+
+@if (_editMode)
+{
+    <div class="toolbar">
+        <span class="field">Add a panel:</span>
+        <div class="palette">
+            @foreach (var kind in WidgetCatalog.All)
+            {
+                @* The payload travels through the browser's own drag-and-drop channel, which
+                   is why this needs one line of inline script — Blazor's DragEventArgs cannot
+                   write to dataTransfer. The canvas reads it back in OnExternalDrop. *@
+                <button type="button"
+                        class="palette-chip"
+                        draggable="true"
+                        data-payload="@kind.Key"
+                        ondragstart="event.dataTransfer.setData('text/plain', this.dataset.payload)"
+                        @onclick="() => AddAsync(kind.Key)">
+                    <span class="dot"></span>@kind.Label
+                </button>
+            }
+        </div>
+        <span class="hint" style="margin:0">Click to append, or drag onto the canvas to place.</span>
+    </div>
+}
+
+<CanvasGrid @ref="_grid"
+            Items="_items"
+            Columns="_columns"
+            RowHeight="_rowHeight"
+            Gap="_gap"
+            EditMode="_editMode"
+            AcceptExternalDrops="true"
+            ResizeHandles="ResizeHandles.Default"
+            @bind-SelectedId="_selectedId"
+            OnExternalDrop="HandleExternalDropAsync"
+            OnLayoutChanged="HandleLayoutChanged"
+            OnItemRemoved="HandleItemRemoved">
+    <ItemTemplate>
+        <WidgetHost Item="context" />
+    </ItemTemplate>
+    <EmptyTemplate>
+        <span>No panels yet — add one from the palette above.</span>
+    </EmptyTemplate>
+</CanvasGrid>
+
+<p class="status">
+    @_items.Count panel(s) · @GridLayoutEngine.RowCount(_items) rows used
+    @if (_selectedId is not null)
+    {
+        <text> · selected <strong>@_selectedId</strong></text>
+    }
+    @if (_lastEvent is not null)
+    {
+        <text> · @_lastEvent</text>
+    }
+</p>
+
+<div class="json-panel">
+    <h2>Layout JSON</h2>
+    <p class="hint">
+        This is the whole layout — the same shape <code>GridLayoutSerializer</code> reads back.
+        Edit it and press Apply to drive the canvas from data.
+    </p>
+    <textarea @bind="_json" @bind:event="oninput" spellcheck="false"></textarea>
+    <div class="toolbar" style="margin-top:10px">
+        <button class="btn btn--primary" @onclick="ApplyJsonAsync">Apply</button>
+        <button class="btn" @onclick="RefreshJson">Refresh from canvas</button>
+        @if (_jsonError is not null)
+        {
+            <span class="status" style="color:#c23434">@_jsonError</span>
+        }
+    </div>
+</div>
+
+@code {
+    private const string StoreKey = "demo-dashboard";
+
+    private CanvasGrid? _grid;
+    private List<GridItem> _items = BuildStartingLayout();
+    private string? _selectedId;
+    private string _json = string.Empty;
+    private string? _jsonError;
+    private string? _lastEvent;
+
+    private int _columns = 12;
+    private int _rowHeight = 60;
+    private int _gap = 10;
+    private bool _editMode = true;
+
+    protected override void OnInitialized() => RefreshJson();
+
+    private static List<GridItem> BuildStartingLayout() =>
+    [
+        new() { Id = "kpi-users", Type = "stat", Title = "Active users", X = 0, Y = 0, W = 3, H = 2, MinW = 2, MinH = 2 },
+        new() { Id = "kpi-orders", Type = "stat", Title = "Orders today", X = 3, Y = 0, W = 3, H = 2, MinW = 2, MinH = 2 },
+        new() { Id = "clock", Type = "clock", Title = "Server time", X = 6, Y = 0, W = 3, H = 2, MinW = 2, MinH = 2 },
+        new() { Id = "kpi-errors", Type = "stat", Title = "Error rate", X = 9, Y = 0, W = 3, H = 2, MinW = 2, MinH = 2 },
+        new() { Id = "traffic", Type = "line", Title = "Traffic over time", X = 0, Y = 2, W = 8, H = 4, MinW = 3, MinH = 3 },
+        new() { Id = "mix", Type = "donut", Title = "Traffic mix", X = 8, Y = 2, W = 4, H = 4, MinW = 2, MinH = 3 },
+        new() { Id = "regions", Type = "table", Title = "By region", X = 0, Y = 6, W = 5, H = 4, MinW = 3, MinH = 3 },
+        new() { Id = "latency", Type = "bars", Title = "p95 latency", X = 5, Y = 6, W = 4, H = 4, MinW = 2, MinH = 3 },
+        new() { Id = "notes", Type = "text", Title = "Notes", X = 9, Y = 6, W = 3, H = 4, MinW = 2, MinH = 2 },
+    ];
+
+    private void ToggleEditMode(ChangeEventArgs e) => _editMode = (bool?)e.Value ?? false;
+
+    private void SetColumns(ChangeEventArgs e) => _columns = ParseInt(e, _columns);
+
+    private void SetRowHeight(ChangeEventArgs e) => _rowHeight = ParseInt(e, _rowHeight);
+
+    private void SetGap(ChangeEventArgs e) => _gap = ParseInt(e, _gap);
+
+    private static int ParseInt(ChangeEventArgs e, int fallback) =>
+        int.TryParse(e.Value?.ToString(), out var value) ? value : fallback;
+
+    private Task CompactAsync() => _grid?.CompactAsync() ?? Task.CompletedTask;
+
+    private Task ClearAsync() => _grid?.ClearAsync() ?? Task.CompletedTask;
+
+    private async Task AddAsync(string kind)
+    {
+        if (_grid is not null)
+        {
+            await _grid.AddItemAsync(WidgetCatalog.Create(kind));
+        }
+    }
+
+    private Task HandleExternalDropAsync(GridExternalDropEventArgs args)
+    {
+        // Hand the canvas a widget and it places it at the drop point.
+        args.Item = WidgetCatalog.Create(args.Payload);
+        Log($"dropped {args.Item.Type} at {args.X},{args.Y}");
+        return Task.CompletedTask;
+    }
+
+    private void HandleLayoutChanged(GridLayoutChangedEventArgs args)
+    {
+        Log(args.Item is null
+            ? $"{args.Reason}"
+            : $"{args.Reason} · {args.Item.Id} → {args.Item.X},{args.Item.Y} {args.Item.W}×{args.Item.H}");
+        RefreshJson();
+    }
+
+    private void HandleItemRemoved(GridItem item) => Log($"removed {item.Id}");
+
+    private void Log(string message) => _lastEvent = message;
+
+    private void RefreshJson()
+    {
+        _json = GridLayoutSerializer.Serialize(_items);
+        _jsonError = null;
+    }
+
+    private async Task ApplyJsonAsync()
+    {
+        if (_grid is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _grid.ImportJsonAsync(_json);
+            _jsonError = null;
+        }
+        catch (Exception ex)
+        {
+            _jsonError = ex.Message;
+        }
+    }
+
+    private void Save()
+    {
+        Store.Save(StoreKey, GridLayoutSerializer.Serialize(_items));
+        Log("layout saved");
+    }
+
+    private async Task LoadAsync()
+    {
+        var json = Store.Load(StoreKey);
+        if (json is not null && _grid is not null)
+        {
+            await _grid.ImportJsonAsync(json);
+            Log("layout loaded");
+        }
+    }
+
+    private async Task ResetAsync()
+    {
+        if (_grid is not null)
+        {
+            await _grid.ImportJsonAsync(GridLayoutSerializer.Serialize(BuildStartingLayout()));
+            Log("layout reset");
+        }
+    }
+}

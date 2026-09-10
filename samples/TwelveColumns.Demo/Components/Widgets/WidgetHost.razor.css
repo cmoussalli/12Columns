@@ -1,0 +1,205 @@
+.widget {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    color: #1c2128;
+    /* Lets panel typography scale with the widget's own width rather than the viewport,
+       so a stat resized from 2 to 6 columns actually looks resized. */
+    container-type: inline-size;
+}
+
+/* ------------------------------------------------------------------ stat */
+
+.stat {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: #3b6cf0;
+}
+
+.stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #656d76;
+}
+
+.stat-value {
+    font-size: clamp(20px, 6cqw, 34px);
+    font-weight: 650;
+    line-height: 1.1;
+    color: #1c2128;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-delta {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.stat-delta.up { color: #1a7f4b; }
+.stat-delta.down { color: #c23434; }
+
+.spark {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 34px;
+    opacity: 0.35;
+}
+
+/* ------------------------------------------------------------------ line */
+
+.chart {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.chart svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.chart .line {
+    stroke: #3b6cf0;
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.chart .area {
+    fill: rgba(59, 108, 240, 0.14);
+    stroke: none;
+}
+
+/* ------------------------------------------------------------------ bars */
+
+.bars {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.bar {
+    flex: 1 1 0;
+    min-width: 3px;
+    background: linear-gradient(180deg, #6d95ff, #3b6cf0);
+    border-radius: 3px 3px 1px 1px;
+}
+
+/* ------------------------------------------------------------------ donut */
+
+.donut {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.donut svg {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 100%;
+}
+
+.donut circle {
+    fill: none;
+    stroke-width: 5;
+}
+
+.donut-track {
+    stroke: #eef1f5;
+}
+
+.donut-slice {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.donut-slice-0 { stroke: #3b6cf0; }
+.donut-slice-1 { stroke: #6d95ff; }
+.donut-slice-2 { stroke: #9db8ff; }
+.donut-slice-3 { stroke: #c9d8ff; }
+
+.donut-label {
+    text-anchor: middle;
+    font-size: 8px;
+    font-weight: 650;
+    fill: #1c2128;
+}
+
+.legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-size: 11px;
+    color: #656d76;
+}
+
+.legend li {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.swatch {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+
+.swatch-0 { background: #3b6cf0; }
+.swatch-1 { background: #6d95ff; }
+.swatch-2 { background: #9db8ff; }
+.swatch-3 { background: #c9d8ff; }
+
+/* ------------------------------------------------------------------ table */
+
+.grid-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.grid-table th {
+    text-align: left;
+    font-weight: 600;
+    color: #656d76;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0 8px 6px 0;
+    border-bottom: 1px solid #e2e6ec;
+}
+
+.grid-table td {
+    padding: 5px 8px 5px 0;
+    border-bottom: 1px solid #f2f4f7;
+    white-space: nowrap;
+}
+
+.grid-table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.grid-table .up { color: #1a7f4b; }
+.grid-table .down { color: #c23434; }
+
+/* ------------------------------------------------------------------ notes */
+
+.notes {
+    margin: 0;
+    color: #656d76;
+    line-height: 1.6;
+}

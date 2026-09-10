@@ -1,0 +1,403 @@
+/* Demo app chrome. The canvas component brings its own stylesheet from
+   _content/TwelveColumns/twelvecolumns.css — nothing here is required to use it. */
+
+:root {
+    --bg: #f4f6f9;
+    --panel: #ffffff;
+    --line: #e2e6ec;
+    --line-soft: #eef1f5;
+    --ink: #1c2128;
+    --ink-muted: #656d76;
+    --accent: #3b6cf0;
+    --accent-ink: #ffffff;
+    --radius: 8px;
+    color-scheme: light;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1 {
+    font-size: 26px;
+    line-height: 1.25;
+    margin: 0 0 8px;
+    letter-spacing: -0.015em;
+}
+
+h2 {
+    font-size: 17px;
+    margin: 28px 0 10px;
+    letter-spacing: -0.01em;
+}
+
+code {
+    font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.92em;
+    background: var(--line-soft);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+pre {
+    margin: 0;
+    padding: 14px 16px;
+    background: #1b1f24;
+    color: #e6edf3;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+/* ------------------------------------------------------------------ shell */
+
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0 20px;
+    height: 52px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 650;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+}
+
+.brand:hover {
+    text-decoration: none;
+}
+
+.brand-mark {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    width: 18px;
+    height: 18px;
+}
+
+.brand-mark i {
+    background: var(--accent);
+    border-radius: 2px;
+}
+
+.brand-mark i:nth-child(2) { opacity: 0.65; }
+.brand-mark i:nth-child(3) { opacity: 0.45; }
+.brand-mark i:nth-child(4) { opacity: 0.8; }
+
+.app-nav {
+    display: flex;
+    gap: 4px;
+    flex: 1 1 auto;
+}
+
+.app-nav a {
+    padding: 5px 11px;
+    border-radius: 6px;
+    color: var(--ink-muted);
+    font-weight: 500;
+}
+
+.app-nav a:hover {
+    background: var(--line-soft);
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.app-nav a.active {
+    background: var(--accent);
+    color: var(--accent-ink);
+}
+
+.app-header-link {
+    color: var(--ink-muted);
+    font-weight: 500;
+}
+
+.app-main {
+    flex: 1 1 auto;
+    padding: 24px 20px 64px;
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.lede {
+    color: var(--ink-muted);
+    max-width: 62ch;
+    margin: 0 0 20px;
+}
+
+/* ------------------------------------------------------------------ controls */
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+}
+
+.toolbar-sep {
+    width: 1px;
+    align-self: stretch;
+    background: var(--line);
+    margin: 0 4px;
+}
+
+.toolbar-spacer {
+    flex: 1 1 auto;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    background: var(--line-soft);
+    border-color: #cfd6de;
+}
+
+.btn:active {
+    transform: translateY(0.5px);
+}
+
+.btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+}
+
+.btn--primary:hover {
+    background: #3260e0;
+    border-color: #3260e0;
+}
+
+.btn--danger:hover {
+    background: #fdeeee;
+    border-color: #f0bcbc;
+    color: #c23434;
+}
+
+.field {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink-muted);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.field select,
+.field input[type="number"] {
+    font: inherit;
+    color: var(--ink);
+    padding: 5px 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel);
+}
+
+.field input[type="range"] {
+    width: 110px;
+    accent-color: var(--accent);
+}
+
+.field-value {
+    display: inline-block;
+    min-width: 30px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 13px;
+    color: var(--ink-muted);
+}
+
+.switch input {
+    accent-color: var(--accent);
+    width: 15px;
+    height: 15px;
+    margin: 0;
+}
+
+/* ------------------------------------------------------------------ palette */
+
+.palette {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.palette-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 8px;
+    border: 1px dashed #c3cbd6;
+    border-radius: 6px;
+    background: var(--panel);
+    font-size: 13px;
+    cursor: grab;
+}
+
+.palette-chip:active {
+    cursor: grabbing;
+}
+
+.palette-chip:hover {
+    border-color: var(--accent);
+    border-style: solid;
+    color: var(--accent);
+}
+
+.palette-chip .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+.hint {
+    color: var(--ink-muted);
+    font-size: 12.5px;
+    margin: 0 0 14px;
+}
+
+/* ------------------------------------------------------------------ panels */
+
+.card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+}
+
+.json-panel {
+    margin-top: 20px;
+}
+
+.json-panel textarea {
+    width: 100%;
+    min-height: 220px;
+    font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace;
+    font-size: 12.5px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    resize: vertical;
+}
+
+.status {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    min-height: 1.4em;
+}
+
+.status strong {
+    color: var(--ink);
+}
+
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ------------------------------------------------------------------ error ui */
+
+#blazor-error-ui {
+    color-scheme: light only;
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}

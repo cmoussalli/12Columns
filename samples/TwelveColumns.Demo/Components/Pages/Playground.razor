@@ -1,0 +1,171 @@
+@page "/playground"
+
+<PageTitle>Playground — TwelveColumns</PageTitle>
+
+<h1>Playground</h1>
+<p class="lede">
+    Every parameter on <code>&lt;CanvasGrid&gt;</code>, wired to a control. Change a setting
+    and interact with the canvas to see exactly what it does.
+</p>
+
+<div class="toolbar">
+    <label class="switch"><input type="checkbox" @bind="_editMode" /> EditMode</label>
+    <label class="switch"><input type="checkbox" @bind="_draggable" /> Draggable</label>
+    <label class="switch"><input type="checkbox" @bind="_resizable" /> Resizable</label>
+    <label class="switch"><input type="checkbox" @bind="_removable" /> Removable</label>
+    <label class="switch"><input type="checkbox" @bind="_showHeader" /> ShowHeader</label>
+    <label class="switch"><input type="checkbox" @bind="_showGridLines" /> ShowGridLines</label>
+    <label class="switch"><input type="checkbox" @bind="_dragFromAnywhere" /> DragFromAnywhere</label>
+    <label class="switch"><input type="checkbox" @bind="_preventCollision" /> PreventCollision</label>
+    <label class="switch"><input type="checkbox" @bind="_allowOverlap" /> AllowOverlap</label>
+</div>
+
+<div class="toolbar">
+    <span class="field">
+        Columns
+        <input type="number" min="1" max="36" style="width:70px" @bind="_columns" @bind:event="oninput" />
+    </span>
+    <span class="field">
+        RowHeight
+        <input type="number" min="20" max="200" step="5" style="width:70px" @bind="_rowHeight" @bind:event="oninput" />
+    </span>
+    <span class="field">
+        Gap
+        <input type="number" min="0" max="40" style="width:70px" @bind="_gap" @bind:event="oninput" />
+    </span>
+    <span class="field">
+        MinRows
+        <input type="number" min="0" max="40" style="width:70px" @bind="_minRows" @bind:event="oninput" />
+    </span>
+    <span class="field">
+        Compaction
+        <select @bind="_compaction">
+            <option value="@GridCompaction.Vertical">Vertical (gravity)</option>
+            <option value="@GridCompaction.None">None (free canvas)</option>
+        </select>
+    </span>
+    <span class="field">
+        ResizeHandles
+        <select @bind="_handles">
+            <option value="@ResizeHandles.Default">Default (E, S, SE)</option>
+            <option value="@ResizeHandles.SouthEast">Corner only</option>
+            <option value="@ResizeHandles.Corners">Corners</option>
+            <option value="@ResizeHandles.All">All eight</option>
+        </select>
+    </span>
+
+    <div class="toolbar-spacer"></div>
+    <button class="btn" @onclick="AddAsync">Add panel</button>
+    <button class="btn" @onclick="AddStaticAsync">Add pinned panel</button>
+    <button class="btn" @onclick="CompactAsync">Compact</button>
+</div>
+
+<CanvasGrid @ref="_grid"
+            Items="_items"
+            Columns="_columns"
+            RowHeight="_rowHeight"
+            Gap="_gap"
+            MinRows="_minRows"
+            EditMode="_editMode"
+            Draggable="_draggable"
+            Resizable="_resizable"
+            Removable="_removable"
+            ShowHeader="_showHeader"
+            ShowGridLines="_showGridLines"
+            DragFromAnywhere="_dragFromAnywhere"
+            PreventCollision="_preventCollision"
+            AllowOverlap="_allowOverlap"
+            Compaction="_compaction"
+            ResizeHandles="_handles"
+            OnLayoutChanged="HandleLayoutChanged"
+            OnInteractionStart="HandleInteractionStart"
+            OnInteractionEnd="HandleInteractionEnd">
+    <ItemTemplate>
+        <WidgetHost Item="context" />
+    </ItemTemplate>
+</CanvasGrid>
+
+<h2>Event log</h2>
+<div class="card" style="max-height:220px;overflow:auto;padding:10px 14px">
+    @if (_log.Count == 0)
+    {
+        <p class="hint" style="margin:0">Interact with the canvas to see events arrive.</p>
+    }
+    else
+    {
+        <ol style="margin:0;padding-left:20px;font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.8">
+            @foreach (var entry in _log)
+            {
+                <li>@entry</li>
+            }
+        </ol>
+    }
+</div>
+
+@code {
+    private CanvasGrid? _grid;
+    private readonly List<string> _log = [];
+
+    private readonly List<GridItem> _items =
+    [
+        new() { Id = "pg-1", Type = "stat", Title = "Stat", X = 0, Y = 0, W = 3, H = 2, MinW = 2, MinH = 2 },
+        new() { Id = "pg-2", Type = "line", Title = "Line", X = 3, Y = 0, W = 6, H = 4, MinW = 3, MinH = 3 },
+        new() { Id = "pg-3", Type = "bars", Title = "Bars", X = 9, Y = 0, W = 3, H = 4, MinW = 2, MinH = 3 },
+        new() { Id = "pg-4", Type = "table", Title = "Table", X = 0, Y = 2, W = 3, H = 4, MinW = 2, MinH = 3 },
+    ];
+
+    private int _columns = 12;
+    private int _rowHeight = 60;
+    private int _gap = 10;
+    private int _minRows = 6;
+    private bool _editMode = true;
+    private bool _draggable = true;
+    private bool _resizable = true;
+    private bool _removable = true;
+    private bool _showHeader = true;
+    private bool _showGridLines = true;
+    private bool _dragFromAnywhere;
+    private bool _preventCollision;
+    private bool _allowOverlap;
+    private GridCompaction _compaction = GridCompaction.Vertical;
+    private ResizeHandles _handles = ResizeHandles.Default;
+
+    private Task AddAsync() =>
+        _grid?.AddItemAsync(WidgetCatalog.Create("stat")) ?? Task.CompletedTask;
+
+    private Task AddStaticAsync()
+    {
+        if (_grid is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        // A pinned panel never moves and other panels are routed around it.
+        var item = WidgetCatalog.Create("text");
+        item.Title = "Pinned";
+        item.Static = true;
+        return _grid.AddItemAsync(item);
+    }
+
+    private Task CompactAsync() => _grid?.CompactAsync() ?? Task.CompletedTask;
+
+    private void HandleLayoutChanged(GridLayoutChangedEventArgs args) =>
+        Log(args.Item is null
+            ? $"LayoutChanged({args.Reason})"
+            : $"LayoutChanged({args.Reason}) {args.Item.Id} → x{args.Item.X} y{args.Item.Y} w{args.Item.W} h{args.Item.H}");
+
+    private void HandleInteractionStart(GridInteractionEventArgs args) =>
+        Log($"{args.Interaction}Start {args.Item.Id}");
+
+    private void HandleInteractionEnd(GridInteractionEventArgs args) =>
+        Log($"{args.Interaction}End {args.Item.Id}");
+
+    private void Log(string entry)
+    {
+        _log.Insert(0, $"{DateTime.Now:HH:mm:ss.fff}  {entry}");
+        if (_log.Count > 60)
+        {
+            _log.RemoveRange(60, _log.Count - 60);
+        }
+    }
+}

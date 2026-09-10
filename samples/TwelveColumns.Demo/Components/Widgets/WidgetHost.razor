@@ -1,0 +1,143 @@
+@* Renders the body of a canvas widget. The CanvasGrid component knows nothing about any
+   of this — the host app decides what a widget looks like, keyed off GridItem.Type. *@
+
+<div class="widget widget--@(Item.Type ?? "text")">
+    @switch (Item.Type)
+    {
+        case "stat":
+            {
+                var series = DemoData.Series(Item.Id, 16);
+                var current = series[^1];
+                var delta = current - series[0];
+                <div class="stat">
+                    <div class="stat-label">@DemoData.Metric(Item.Id)</div>
+                    <div class="stat-value">@DemoData.Format(current * 137)</div>
+                    <div class="stat-delta @(delta >= 0 ? "up" : "down")">
+                        @(delta >= 0 ? "▲" : "▼") @DemoData.Format(Math.Abs(delta)) %
+                    </div>
+                    <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+                        <polyline points="@Points(series, 100, 30)" fill="none" stroke="currentColor"
+                                  stroke-width="1.5" vector-effect="non-scaling-stroke" />
+                    </svg>
+                </div>
+                break;
+            }
+
+        case "line":
+            {
+                var series = DemoData.Series(Item.Id, 40);
+                <div class="chart">
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Line chart">
+                        <path d="@AreaPath(series, 100, 100)" class="area" />
+                        <polyline points="@Points(series, 100, 100)" class="line"
+                                  fill="none" vector-effect="non-scaling-stroke" />
+                    </svg>
+                </div>
+                break;
+            }
+
+        case "bars":
+            {
+                var series = DemoData.Series(Item.Id, 9);
+                var peak = series.Max();
+                <div class="bars">
+                    @for (var i = 0; i < series.Length; i++)
+                    {
+                        var height = (series[i] / peak * 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+                        <div class="bar" style="height:@(height)%" title="@DemoData.Format(series[i])"></div>
+                    }
+                </div>
+                break;
+            }
+
+        case "donut":
+            {
+                var slices = DemoData.Series(Item.Id, 4, 10, 40);
+                var total = slices.Sum();
+                var offset = 0d;
+                <div class="donut">
+                    <svg viewBox="0 0 42 42" role="img" aria-label="Donut chart">
+                        <circle class="donut-track" cx="21" cy="21" r="15.9" />
+                        @for (var i = 0; i < slices.Length; i++)
+                        {
+                            var portion = slices[i] / total * 100;
+                            <circle class="donut-slice donut-slice-@i" cx="21" cy="21" r="15.9"
+                                    stroke-dasharray="@Dash(portion)" stroke-dashoffset="@Offset(offset)" />
+                            offset += portion;
+                        }
+                        <text x="21" y="22.6" class="donut-label">@slices.Length</text>
+                    </svg>
+                    <ul class="legend">
+                        @for (var i = 0; i < slices.Length; i++)
+                        {
+                            <li><span class="swatch swatch-@i"></span>@DemoData.Region(Item.Id, i)</li>
+                        }
+                    </ul>
+                </div>
+                break;
+            }
+
+        case "table":
+            {
+                var series = DemoData.Series(Item.Id, 6);
+                <table class="grid-table">
+                    <thead>
+                        <tr><th>Region</th><th>@DemoData.Metric(Item.Id)</th><th>Change</th></tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < series.Length; i++)
+                        {
+                            var change = series[i] - 50;
+                            <tr>
+                                <td>@DemoData.Region(Item.Id, i)</td>
+                                <td class="num">@DemoData.Format(series[i] * 42)</td>
+                                <td class="num @(change >= 0 ? "up" : "down")">@(change >= 0 ? "+" : "")@DemoData.Format(change)%</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                break;
+            }
+
+        case "clock":
+            <LiveClock />
+            break;
+
+        default:
+            <p class="notes">
+                Drag this panel by its header, or grab an edge to resize it. Everything you do
+                is written straight back to the <code>GridItem</code> list the page owns.
+            </p>
+            break;
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public GridItem Item { get; set; } = default!;
+
+    private static string Points(double[] values, double width, double height)
+    {
+        var (min, span) = Range(values);
+        return string.Join(' ', values.Select((v, i) =>
+            FormattableString.Invariant(
+                $"{i * width / (values.Length - 1):0.##},{height - ((v - min) / span * height * 0.9) - (height * 0.05):0.##}")));
+    }
+
+    private static string AreaPath(double[] values, double width, double height) =>
+        FormattableString.Invariant($"M0,{height} L") + Points(values, width, height).Replace(' ', 'L')
+        + FormattableString.Invariant($" L{width},{height} Z");
+
+    private static (double Min, double Span) Range(double[] values)
+    {
+        var min = values.Min();
+        var max = values.Max();
+        return (min, Math.Max(max - min, 0.0001));
+    }
+
+    private static string Dash(double portion) =>
+        FormattableString.Invariant($"{portion:0.##} {100 - portion:0.##}");
+
+    // The donut's first slice starts at 12 o'clock, which is 25% around the circumference.
+    private static string Offset(double consumed) =>
+        FormattableString.Invariant($"{25 - consumed:0.##}");
+}

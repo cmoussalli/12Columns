@@ -1,0 +1,37 @@
+@implements IDisposable
+
+<div class="clock">
+    <div class="clock-time">@_now.ToString("HH:mm:ss")</div>
+    <div class="clock-date">@_now.ToString("dddd, d MMMM yyyy")</div>
+</div>
+
+@code {
+    // A ticking widget is the clearest proof that panel content keeps running while the
+    // canvas is being dragged around — the component is moved, never re-created.
+    private readonly CancellationTokenSource _cts = new();
+    private DateTime _now = DateTime.Now;
+
+    protected override void OnInitialized() => _ = TickAsync();
+
+    private async Task TickAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_cts.Token))
+            {
+                _now = DateTime.Now;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}

@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/TwelveColumns.Demo/TwelveColumns.Demo.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/TwelveColumns/TwelveColumns.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TwelveColumns.Tests/TwelveColumns.Tests.csproj" />
+  </Folder>
+</Solution>

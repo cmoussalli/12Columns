@@ -1,0 +1,93 @@
+@page "/"
+
+<PageTitle>TwelveColumns</PageTitle>
+
+<h1>A drag-and-drop dashboard canvas for Blazor</h1>
+<p class="lede">
+    <code>&lt;CanvasGrid&gt;</code> gives any Blazor app a Grafana-style widget canvas: a
+    12-column grid the end user can rearrange with the mouse, and the developer can drive
+    from plain C#. Drop it in, hand it a list of <code>GridItem</code>, and render whatever
+    you like inside each panel.
+</p>
+
+<h2>Try it</h2>
+<p class="hint">Drag a panel by its header. Grab the bottom-right corner to resize.</p>
+
+<CanvasGrid Items="_items" Columns="12" RowHeight="56" Gap="10" MinRows="6">
+    <ItemTemplate>
+        <WidgetHost Item="context" />
+    </ItemTemplate>
+</CanvasGrid>
+
+<div class="two-col" style="margin-top:32px">
+    <div>
+        <h2 style="margin-top:0">Add it to your app</h2>
+        <p class="hint">Three steps, no configuration.</p>
+        <pre><code>@InstallSnippet</code></pre>
+    </div>
+
+    <div>
+        <h2 style="margin-top:0">The whole API you need</h2>
+        <p class="hint">Everything above is rendered by this.</p>
+        <pre><code>@UsageSnippet</code></pre>
+    </div>
+</div>
+
+<h2>What you get</h2>
+<div class="two-col">
+    <div class="card">
+        <h3 style="margin-top:0;font-size:15px">For the end user</h3>
+        <ul style="margin:0;padding-left:18px;color:var(--ink-muted);line-height:1.8">
+            <li>Drag panels with the mouse, pen or touch</li>
+            <li>Resize from any enabled edge or corner</li>
+            <li>Panels shuffle out of the way and settle upwards</li>
+            <li>Keyboard support: arrows move, <code>Shift</code>+arrows resize, <code>Delete</code> removes</li>
+        </ul>
+    </div>
+    <div class="card">
+        <h3 style="margin-top:0;font-size:15px">For the developer</h3>
+        <ul style="margin:0;padding-left:18px;color:var(--ink-muted);line-height:1.8">
+            <li>Add, remove, move, resize and compact from C#</li>
+            <li><code>GridLayoutSerializer</code> round-trips the layout as JSON</li>
+            <li>Column count, row height, gap, compaction and collision rules are all parameters</li>
+            <li>Drop targets for an external widget palette</li>
+        </ul>
+    </div>
+</div>
+
+@code {
+    private const string InstallSnippet = """
+        1. Reference the library
+           dotnet add package TwelveColumns
+
+        2. Link its stylesheet in App.razor
+           <link rel="stylesheet"
+                 href="_content/TwelveColumns/twelvecolumns.css" />
+
+        3. Import the namespace in _Imports.razor
+           @using TwelveColumns
+        """;
+
+    private const string UsageSnippet = """
+        <CanvasGrid Items="_items" Columns="12">
+            <ItemTemplate>
+                <MyPanel Item="context" />
+            </ItemTemplate>
+        </CanvasGrid>
+
+        @code {
+            List<GridItem> _items = [
+                new() { Title = "Traffic", X = 0, Y = 0, W = 8, H = 4 },
+                new() { Title = "Mix",     X = 8, Y = 0, W = 4, H = 4 },
+            ];
+        }
+        """;
+
+    private readonly List<GridItem> _items =
+    [
+        new() { Id = "home-stat", Type = "stat", Title = "Active users", X = 0, Y = 0, W = 3, H = 2, MinW = 2, MinH = 2 },
+        new() { Id = "home-line", Type = "line", Title = "Traffic", X = 3, Y = 0, W = 6, H = 4, MinW = 3, MinH = 3 },
+        new() { Id = "home-donut", Type = "donut", Title = "Mix", X = 9, Y = 0, W = 3, H = 4, MinW = 2, MinH = 3 },
+        new() { Id = "home-bars", Type = "bars", Title = "Latency", X = 0, Y = 2, W = 3, H = 2, MinW = 2, MinH = 2 },
+    ];
+}

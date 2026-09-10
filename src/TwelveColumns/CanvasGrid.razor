@@ -1,0 +1,111 @@
+@namespace TwelveColumns
+@implements IAsyncDisposable
+
+<div @ref="_element"
+     class="@GridCssClass"
+     style="@GridStyle"
+     @attributes="AdditionalAttributes">
+
+    @if (ShowGridLines && EditMode)
+    {
+        <div class="tc-guides" aria-hidden="true">
+            @for (var column = 0; column < Columns; column++)
+            {
+                <div class="tc-guide" style="--tc-x:@column"></div>
+            }
+        </div>
+    }
+
+    @if (_activeItem is not null)
+    {
+        <div class="tc-placeholder" style="@CellVars(_activeItem)" aria-hidden="true"></div>
+    }
+
+    @foreach (var item in _items)
+    {
+        var canDrag = CanDrag(item);
+        var canResize = CanResize(item);
+        var canRemove = CanRemove(item);
+        var isActive = ReferenceEquals(item, _activeItem);
+
+        <div @key="item.Id"
+             class="@ItemCssClass(item, isActive)"
+             style="@CellVars(item)"
+             data-tc-id="@item.Id"
+             data-tc-x="@item.X"
+             data-tc-y="@item.Y"
+             data-tc-w="@item.W"
+             data-tc-h="@item.H"
+             data-tc-minw="@item.MinW"
+             data-tc-minh="@item.MinH"
+             data-tc-maxw="@item.MaxW"
+             data-tc-maxh="@item.MaxH"
+             data-tc-drag="@DragFlag(canDrag && DragFromAnywhere)"
+             tabindex="0"
+             role="group"
+             aria-label="@ItemLabel(item)"
+             @onpointerdown="() => SelectAsync(item.Id)"
+             @onkeydown="args => OnItemKeyDownAsync(args, item)">
+
+            @* Blazor owns the style attribute of .tc-item, so live drag offsets are written
+               to this inner shell instead — a re-render would otherwise wipe them. *@
+            <div class="tc-item-shell">
+
+                @if (ShowHeader)
+                {
+                    <div class="tc-item-header" data-tc-drag="@DragFlag(canDrag && !DragFromAnywhere)">
+                        <div class="tc-item-title">
+                            @if (HeaderTemplate is not null)
+                            {
+                                @HeaderTemplate(item)
+                            }
+                            else
+                            {
+                                <span>@item.Title</span>
+                            }
+                        </div>
+                        <div class="tc-item-actions" data-tc-nodrag>
+                            @ItemActionsTemplate?.Invoke(item)
+                            @if (canRemove)
+                            {
+                                <button type="button"
+                                        class="tc-btn tc-btn--remove"
+                                        title="Remove widget"
+                                        aria-label="Remove @ItemLabel(item)"
+                                        @onclick="() => RemoveItemAsync(item)">
+                                    <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+                                        <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" />
+                                    </svg>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="tc-item-body">
+                    @if (ItemTemplate is not null)
+                    {
+                        @ItemTemplate(item)
+                    }
+                    else
+                    {
+                        <div class="tc-item-fallback">@(item.Title ?? item.Type ?? item.Id)</div>
+                    }
+                </div>
+
+                @if (canResize)
+                {
+                    @foreach (var handle in EnabledResizeHandles())
+                    {
+                        <div class="tc-resize tc-resize--@handle" data-tc-resize="@handle" aria-hidden="true"></div>
+                    }
+                }
+            </div>
+        </div>
+    }
+
+    @if (_items.Count == 0 && EmptyTemplate is not null)
+    {
+        <div class="tc-empty">@EmptyTemplate</div>
+    }
+</div>
